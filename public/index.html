@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorldPulse — Global News</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #21262d;
+      --border: #30363d; --accent: #58a6ff; --green: #3fb950;
+      --text: #e6edf3; --muted: #8b949e; --danger: #f85149;
+      --hover: #1c2128;
+      --cat-politics: #58a6ff; --cat-conflict: #f85149;
+      --cat-business: #3fb950; --cat-tech: #d2a8ff;
+      --cat-climate: #79c0ff; --cat-science: #ffa657;
+      --cat-society: #e3b341;
+    }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+    /* HEADER */
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; position: sticky; top: 0; z-index: 100; }
+    .header-inner { max-width: 1280px; margin: 0 auto; height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .logo { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; }
+    .logo-icon { font-size: 26px; }
+    .logo-title { font-size: 18px; font-weight: 700; }
+    .logo-sub { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .refresh-btn { background: var(--accent); color: #0d1117; border: none; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity .15s; }
+    .refresh-btn:hover { opacity: 0.85; }
+    .refresh-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .ai-badge { background: #2d1f6e; border: 1px solid #7c3aed; color: #a78bfa; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+    .last-updated { font-size: 12px; color: var(--muted); }
+
+    /* CATEGORY TABS */
+    .tabs-wrap { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; overflow-x: auto; scrollbar-width: none; }
+    .tabs-wrap::-webkit-scrollbar { display: none; }
+    .tabs { max-width: 1280px; margin: 0 auto; display: flex; gap: 4px; }
+    .tab { padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s, border-color .15s; }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+    /* REGION FILTER */
+    .region-bar { max-width: 1280px; margin: 20px auto 0; padding: 0 24px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .region-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .region-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); border-radius: 20px; padding: 4px 12px; font-size: 12px; cursor: pointer; transition: all .15s; }
+    .region-btn:hover, .region-btn.active { background: var(--accent); border-color: var(--accent); color: #0d1117; font-weight: 600; }
+
+    /* STATS */
+    .stats-bar { max-width: 1280px; margin: 16px auto 0; padding: 0 24px; display: flex; gap: 24px; flex-wrap: wrap; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* GRID */
+    .container { max-width: 1280px; margin: 24px auto; padding: 0 24px 48px; }
+    .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+
+    /* CARD */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: border-color .2s, transform .2s, background .2s; position: relative; }
+    .card:hover { border-color: var(--accent); background: var(--hover); transform: translateY(-2px); }
+
+    .card-rank { position: absolute; top: 10px; left: 10px; background: rgba(13,17,23,.85); color: var(--accent); font-size: 11px; font-weight: 700; border-radius: 4px; padding: 2px 7px; z-index: 2; }
+    .cat-tag { position: absolute; top: 10px; right: 10px; font-size: 10px; font-weight: 700; border-radius: 4px; padding: 2px 7px; z-index: 2; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .card-img { width: 100%; height: 170px; object-fit: cover; display: block; }
+    .card-accent-bar { height: 4px; }
+
+    /* SOURCE ATTRIBUTION — prominent */
+    .card-source { padding: 12px 16px 0; display: flex; align-items: center; gap: 10px; }
+    .source-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .source-origin { font-size: 12px; color: var(--muted); }
+    .source-dot { color: var(--border); }
+    .source-time { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+    .card-body { padding: 10px 16px 14px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .card-title { font-size: 15px; font-weight: 600; line-height: 1.45; }
+    .card-title a { color: var(--text); text-decoration: none; }
+    .card-title a:hover { color: var(--accent); }
+
+    /* AI SUMMARY BOX */
+    .ai-summary { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 10px 12px; font-size: 13px; color: #c9d1d9; line-height: 1.65; }
+    .ai-summary-label { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+
+    .card-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .read-btn { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 600; }
+    .read-btn:hover { text-decoration: underline; }
+    .region-pill { font-size: 11px; color: var(--muted); background: var(--surface2); border-radius: 4px; padding: 2px 7px; }
+
+    /* LOADING */
+    .loading { text-align: center; padding: 80px 24px; color: var(--muted); }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg { background: rgba(248,81,73,.1); border: 1px solid var(--danger); border-radius: 8px; padding: 14px 18px; color: var(--danger); margin: 20px 24px; display: none; }
+
+    /* SOURCES FOOTER */
+    .sources-section { max-width: 1280px; margin: 0 auto; padding: 0 24px 20px; border-top: 1px solid var(--border); padding-top: 28px; }
+    .section-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+    .sources-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+    .source-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 13px; font-size: 12px; display: flex; align-items: center; gap: 6px; transition: border-color .15s; }
+    .source-chip.active { border-color: var(--green); }
+    .chip-name { font-weight: 600; }
+    .chip-country { color: var(--muted); font-size: 11px; }
+
+    /* DISCLAIMER */
+    .disclaimer { max-width: 1280px; margin: 0 auto 40px; padding: 0 24px; }
+    .disclaimer-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+
+    @media (max-width: 600px) {
+      .news-grid { grid-template-columns: 1fr; }
+      .stats-bar { gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <span class="logo-icon">🌍</span>
+      <div>
+        <div class="logo-title">WorldPulse</div>
+        <div class="logo-sub">Global News · AI Summaries</div>
+      </div>
+    </a>
+    <div class="header-right">
+      <span class="ai-badge">✦ AI</span>
+      <span class="last-updated" id="lastUpdated"></span>
+      <button class="refresh-btn" id="refreshBtn" onclick="loadNews(true)">↻ Refresh</button>
+    </div>
+  </div>
+</header>
+
+<!-- CATEGORY TABS -->
+<div class="tabs-wrap">
+  <div class="tabs" id="categoryTabs"></div>
+</div>
+
+<!-- TWITTER TAB BUTTON -->
+<div style="max-width:1280px;margin:16px auto 0;padding:0 24px;display:flex;align-items:center;gap:12px">
+  <button class="refresh-btn" id="twitterTabBtn" onclick="toggleTwitterFeed()" style="background:#1d9bf0">
+    𝕏 Twitter/X Feed
+  </button>
+  <span id="twitterStatus" style="font-size:12px;color:var(--muted)"></span>
+</div>
+
+<!-- TWITTER FEED PANEL -->
+<div id="twitterPanel" style="display:none;max-width:1280px;margin:16px auto 0;padding:0 24px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-size:14px;font-weight:700;color:#1d9bf0">𝕏 Twitter/X — AI Summaries</div>
+    <div id="twitterAccounts" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
+  <div id="twitterGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+    <div class="loading"><div class="spinner" style="border-top-color:#1d9bf0"></div><div>Loading tweets...</div></div>
+  </div>
+  <div style="margin-top:12px;font-size:11px;color:var(--muted);padding:10px 14px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">
+    ⚠ Twitter feeds are fetched via Nitter (open-source proxy). Availability depends on nitter.net uptime.
+    To add/remove accounts, edit <code>TWITTER_ACCOUNTS</code> in <code>server.js</code>.
+  </div>
+</div>
+
+<!-- REGION FILTER -->
+<div class="region-bar">
+  <span class="region-label">Region:</span>
+  <button class="region-btn active" onclick="setRegion('All', this)">All</button>
+  <button class="region-btn" onclick="setRegion('Europe', this)">🇪🇺 Europe</button>
+  <button class="region-btn" onclick="setRegion('Asia', this)">🌏 Asia</button>
+  <button class="region-btn" onclick="setRegion('India', this)">🇮🇳 India</button>
+  <button class="region-btn" onclick="setRegion('Middle East', this)">🕌 Middle East</button>
+  <button class="region-btn" onclick="setRegion('Americas', this)">🌎 Americas</button>
+  <button class="region-btn" onclick="setRegion('Africa', this)">🌍 Africa</button>
+  <button class="region-btn" onclick="setRegion('Oceania', this)">🦘 Oceania</button>
+</div>
+<!-- INDIAN CITIES FILTER -->
+<div class="region-bar" style="margin-top:8px">
+  <span class="region-label">🇮🇳 Cities:</span>
+  <button class="region-btn" onclick="setRegion('Bangalore', this)">🏙 Bangalore</button>
+  <button class="region-btn" onclick="setRegion('Delhi', this)">🏛 Delhi</button>
+  <button class="region-btn" onclick="setRegion('Mumbai', this)">🌊 Mumbai</button>
+  <button class="region-btn" onclick="setRegion('Jhansi', this)">🏰 Jhansi</button>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div><div class="stat-value" id="statStories">—</div><div class="stat-label">Stories</div></div>
+  <div><div class="stat-value" id="statSources">—</div><div class="stat-label">Sources</div></div>
+  <div><div class="stat-value" id="statRegions">—</div><div class="stat-label">Regions</div></div>
+</div>
+
+<div class="error-msg" id="errorMsg"></div>
+
+<!-- NEWS GRID -->
+<div class="container">
+  <div id="newsContainer">
+    <div class="loading"><div class="spinner"></div><div>Fetching & summarising global news with AI…</div></div>
+  </div>
+</div>
+
+<!-- SOURCES -->
+<div class="sources-section">
+  <div class="section-title">Active News Sources</div>
+  <div class="sources-grid" id="sourcesGrid"></div>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="disclaimer">
+  <div class="disclaimer-box">
+    <strong>About WorldPulse:</strong> Pulls RSS feeds from news organisations around the world. AI summaries (Claude Haiku) are neutral rewrites of each article's content — no opinion or editorial bias is added. The underlying stories reflect each publication's own reporting. Always read the original source for the full picture.
+  </div>
+</div>
+
+<script>
+  let allArticles = [];
+  let activeCategory = 'All';
+  let activeRegion = 'All';
+
+  const CATEGORY_COLORS = {
+    'World Politics':        '#58a6ff',
+    'Conflict & Security':   '#f85149',
+    'Business & Economy':    '#3fb950',
+    'Technology':            '#d2a8ff',
+    'Climate & Environment': '#79c0ff',
+    'Science & Health':      '#ffa657',
+    'Society & Culture':     '#e3b341'
+  };
+
+  function catColor(cat) { return CATEGORY_COLORS[cat] || '#8b949e'; }
+
+  function timeAgo(d) {
+    const m = Math.floor((Date.now() - new Date(d)) / 60000);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h/24)}d ago`;
+  }
+
+  function buildTabs(articles) {
+    const cats = ['All', ...Object.keys(CATEGORY_COLORS)];
+    const counts = {};
+    articles.forEach(a => { counts[a.category] = (counts[a.category] || 0) + 1; });
+
+    document.getElementById('categoryTabs').innerHTML = cats.map(c => {
+      const count = c === 'All' ? articles.length : (counts[c] || 0);
+      return `<button class="tab ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c}', this)">
+        ${c} ${count > 0 ? `<span style="font-size:11px;opacity:.6">(${count})</span>` : ''}
+      </button>`;
+    }).join('');
+  }
+
+  function setCategory(cat, btn) {
+    activeCategory = cat;
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderArticles();
+  }
+
+  function setRegion(region, btn) {
+    activeRegion = region;
+    document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderArticles();
+  }
+
+  // City regions need exact match, not .includes()
+  const CITY_REGIONS = ['Bangalore', 'Delhi', 'Mumbai', 'Jhansi'];
+
+  function filtered() {
+    return allArticles.filter(a => {
+      const catOk = activeCategory === 'All' || a.category === activeCategory;
+      const regOk = activeRegion === 'All' || a.region === activeRegion ||
+        (!CITY_REGIONS.includes(activeRegion) && a.region && a.region.includes(activeRegion));
+      return catOk && regOk;
+    });
+  }
+
+  function renderArticles() {
+    const articles = filtered();
+    const container = document.getElementById('newsContainer');
+
+    document.getElementById('statStories').textContent = articles.length;
+    document.getElementById('statSources').textContent = new Set(articles.map(a => a.source)).size;
+    document.getElementById('statRegions').textContent = new Set(articles.map(a => a.region)).size;
+    document.getElementById('statsBar').style.display = 'flex';
+
+    if (articles.length === 0) {
+      container.innerHTML = '<div class="loading"><div style="font-size:32px">🔍</div><div>No stories in this filter.</div></div>';
+      return;
+    }
+
+    const html = articles.map((a, i) => {
+      const color = catColor(a.category);
+      return `
+      <div class="card">
+        <div class="card-rank">#${i + 1}</div>
+        <div class="cat-tag" style="background:${color}22;color:${color};border:1px solid ${color}44">${a.category || ''}</div>
+
+        ${a.image
+          ? `<img class="card-img" src="${a.image}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+             <div class="card-accent-bar" style="background:${color};display:none"></div>`
+          : `<div class="card-accent-bar" style="background:${color}"></div>`}
+
+        <!-- SOURCE — prominent -->
+        <div class="card-source">
+          <span style="font-size:20px">${a.flag}</span>
+          <div>
+            <div class="source-name">${a.source}</div>
+            <div class="source-origin">From: ${a.country}</div>
+          </div>
+          <span class="source-time">${timeAgo(a.published)}</span>
+        </div>
+
+        <div class="card-body">
+          <div class="card-title">
+            <a href="${a.link}" target="_blank" rel="noopener noreferrer">${a.title}</a>
+          </div>
+
+          <!-- AI SUMMARY -->
+          ${a.summary ? `
+          <div class="ai-summary">
+            <div class="ai-summary-label">✦ AI Summary</div>
+            ${a.summary}
+          </div>` : ''}
+        </div>
+
+        <div class="card-footer">
+          <a class="read-btn" href="${a.link}" target="_blank" rel="noopener noreferrer">Read original →</a>
+          <span class="region-pill">${a.region}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    container.innerHTML = `<div class="news-grid">${html}</div>`;
+  }
+
+  async function loadNews(forceRefresh = false) {
+    const btn = document.getElementById('refreshBtn');
+    const errorEl = document.getElementById('errorMsg');
+    btn.disabled = true;
+    errorEl.style.display = 'none';
+
+    if (!forceRefresh && allArticles.length === 0) {
+      document.getElementById('newsContainer').innerHTML =
+        '<div class="loading"><div class="spinner"></div><div>Fetching & summarising global news with AI…</div></div>';
+    }
+
+    try {
+      const res = await fetch('/api/news');
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+      allArticles = data.articles || [];
+
+      buildTabs(allArticles);
+      renderArticles();
+      renderSources(data.sources || []);
+      document.getElementById('lastUpdated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+    } catch (err) {
+      errorEl.textContent = `⚠ Could not load news: ${err.message}`;
+      errorEl.style.display = 'block';
+      if (allArticles.length === 0) {
+        document.getElementById('newsContainer').innerHTML =
+          '<div class="loading"><div style="font-size:32px">📡</div><div>Unable to connect to server.</div></div>';
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function renderSources(activeSources) {
+    fetch('/api/sources').then(r => r.json()).then(sources => {
+      document.getElementById('sourcesGrid').innerHTML = sources.map(s => `
+        <div class="source-chip ${activeSources.includes(s.name) ? 'active' : ''}">
+          <span>${s.flag}</span>
+          <span class="chip-name">${s.name}</span>
+          <span class="chip-country">${s.country}</span>
+        </div>`).join('');
+    }).catch(() => {});
+  }
+
+  // ── Twitter Feed ────────────────────────────────────────────────────────────
+  let twitterLoaded = false;
+  let twitterVisible = false;
+
+  function toggleTwitterFeed() {
+    twitterVisible = !twitterVisible;
+    document.getElementById('twitterPanel').style.display = twitterVisible ? 'block' : 'none';
+    document.getElementById('twitterTabBtn').style.background = twitterVisible ? '#0f6a9e' : '#1d9bf0';
+    if (twitterVisible && !twitterLoaded) loadTweets();
+  }
+
+  async function loadTweets() {
+    const status = document.getElementById('twitterStatus');
+    status.textContent = 'Loading…';
+    try {
+      const res = await fetch('/api/tweets');
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+      twitterLoaded = true;
+      status.textContent = `${data.tweets.length} tweets loaded`;
+      renderAccounts(data.accounts);
+      renderTweets(data.tweets);
+    } catch (err) {
+      status.textContent = '⚠ Failed to load tweets';
+      document.getElementById('twitterGrid').innerHTML =
+        `<div class="loading"><div style="font-size:28px">📡</div><div>${err.message}</div></div>`;
+    }
+  }
+
+  function renderAccounts(accounts) {
+    document.getElementById('twitterAccounts').innerHTML = accounts.map(a =>
+      `<span style="background:#1d9bf022;border:1px solid #1d9bf044;border-radius:20px;padding:3px 10px;font-size:12px;color:#1d9bf0">
+        ${a.flag} ${a.label}
+      </span>`
+    ).join('');
+  }
+
+  function renderTweets(tweets) {
+    const color = '#1d9bf0';
+    document.getElementById('twitterGrid').innerHTML = tweets.map((t, i) => `
+      <div class="card" style="border-color:#1d9bf022">
+        <div class="card-rank">#${i+1}</div>
+        <div class="card-accent-bar" style="background:${color}"></div>
+        <div class="card-source">
+          <span style="font-size:20px">${t.flag}</span>
+          <div>
+            <div class="source-name">${t.source}</div>
+            <div class="source-origin" style="color:#1d9bf0">${t.label || 'Twitter/X'}</div>
+          </div>
+          <span class="source-time">${timeAgo(t.published)}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-title">
+            <a href="${t.link}" target="_blank" rel="noopener noreferrer">${t.title}</a>
+          </div>
+          ${t.summary ? `
+          <div class="ai-summary" style="border-left-color:#1d9bf0">
+            <div class="ai-summary-label" style="color:#1d9bf0">✦ AI Summary</div>
+            ${t.summary}
+          </div>` : ''}
+        </div>
+        <div class="card-footer">
+          <a class="read-btn" href="${t.link}" target="_blank" rel="noopener noreferrer" style="color:#1d9bf0">View on X →</a>
+          <span class="region-pill">${t.category || ''}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  loadNews();
+  setInterval(() => loadNews(true), 15 * 60 * 1000);
+</script>
+</body>
+</html>
